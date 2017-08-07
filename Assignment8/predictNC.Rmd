@@ -1,0 +1,478 @@
+---
+title: ""
+author: <a > Rohit </a>
+date: "08/08/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(DT)
+library(plotly)
+library(dplyr)
+library(gridExtra)
+library(RColorBrewer)
+load("county.RData")
+load("agg_voted.RData")
+load("longagg.RData")
+```
+
+## Predict NC - Random Forests Project
+<hr>
+
+The goal of this report is to predict election day turnout and results in NC using early voting Starting with the some traditional aggregation methods:
+
+<hr>
+
+###Predicted Turnout by Party
+<hr>
+
+|Party | Voters | Percent |
+|------|--------|---------|
+| DEM  |1,915,618|70.29%|
+| REP  |1,553,310|74.69%|
+| UNA  |1,295,391|62.89%|
+| TOTAL:  |4,783,524|69.36%|
+```{R chart1, echo=FALSE, message = FALSE}
+Year <- c(rep(2008,3),rep(2012,3),rep(2016,3))
+Percent <- c(71.6, 71.3, 62.05, 69.9, 72.8, 60.3, 70.3, 74.7, 62.9)
+Party <- c(rep(c("DEM", "REP", "UNA"),3))
+chart <- data.frame (cbind(Year, Party, Percent))
+
+gg <- ggplot(chart, aes(x=Year,y=Percent, fill=Party))+ geom_bar(position = "dodge", stat="identity") + scale_fill_manual(values=c("blue", "red", "grey")) + annotate("text", x = .72, y = 2.27, label = "62.05%")+ annotate("text", x = 1, y = 6.28, label = "71.3%")+ annotate("text", x = 1.32, y = 7.27, label = "71.6%")+ annotate("text", x = 1.72, y = 1.27, label = "60.3%")+ annotate("text", x = 2, y = 4.28, label = "69.9")+ annotate("text", x = 2.32, y = 8.27, label = "72.8%")+ annotate("text", x = 2.72, y = 3.27, label = "62.9%")+ annotate("text", x = 3, y = 5.28, label = "70.3%")+ annotate("text", x = 3.32, y = 9.27, label = "74.7%")+ labs(title="Turnout by Party")
+
+Year_TOT <- c(2008,2012,2016)
+Percent_TOT <- c(69.6,68.3,69.36)
+Party_TOT <- c("Obama", "Romney", "?")
+chart2 <- data.frame (cbind(Year_TOT,Percent_TOT,Party_TOT))
+names(chart2) <- c("Year", "Percent", "Party")
+gg2 <- ggplot(chart2, aes(x=Year,Percent, color=Party))+ geom_bar(position = "dodge", stat="identity")+ scale_color_manual(values=c("grey", "blue", "red"))+ annotate("text", x = 1, y = 3.16, label = "69.6%")+ annotate("text", x = 2, y = 1.15, label = "68.3%")+ annotate("text", x = 3, y = 2.15, label = "69.36%")+labs(title="Total Turnout")
+grid.arrange(gg, gg2)
+```
+<hr>
+###Predicted Turnout by County
+<hr>
+```{r county, echo=FALSE}
+datatable(county_res)
+```
+
+```{R plotly, echo = FALSE}
+colors <- c("blue","red","grey","green")
+p <- plot_ly(long_agg[1:4,], labels = ~variable, values = ~value, type = 'pie',
+             textposition = 'inside',
+             textinfo = 'label+percent',
+             insidetextfont = list(color = '#FFFFFF'),
+             hoverinfo = 'text',
+             text = ~paste(value),
+             marker = list(colors = colors,
+                           line = list(color = '#FFFFFF', width = 1)),
+             #The 'pull' attribute can also be used to create space between the sectors
+             showlegend = FALSE) %>%
+    layout(title = 'Early Voting by Party',
+           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+w <- plot_ly(long_agg[5:11,], labels = ~variable, values = ~value, type = 'pie',
+             textposition = 'inside',
+             textinfo = 'label+percent',
+             insidetextfont = list(color = '#FFFFFF'),
+             hoverinfo = 'text',
+             text = ~paste(value),
+             marker = list(colors = brewer.pal(7,"Spectral"),
+                           line = list(color = 'black', width = 1)),
+             #The 'pull' attribute can also be used to create space between the sectors
+             showlegend = FALSE) %>%
+    layout(title = 'Early Voting by Race',
+           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+g <- plot_ly(long_agg[12:13,], labels = ~variable, values = ~value, type = 'pie',
+             textposition = 'inside',
+             textinfo = 'label+percent',
+             insidetextfont = list(color = 'black'),
+             hoverinfo = 'text',
+             text = ~paste(value),
+             marker = list(colors = c("cyan","pink"),
+                           line = list(color = 'black', width = 1)),
+             #The 'pull' attribute can also be used to create space between the sectors
+             showlegend = FALSE) %>%
+    layout(title = 'Early Voting by Gender',
+           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+a <- plot_ly(long_agg[14:17,], labels = ~variable, values = ~value, type = 'pie',
+             textposition = 'inside',
+             textinfo = 'label+percent',
+             insidetextfont = list(color = 'black'),
+             hoverinfo = 'text',
+             text = ~paste(value),
+             marker = list(colors = brewer.pal(4, "PuBuGn"),
+                           line = list(color = 'black', width = 1)),
+             #The 'pull' attribute can also be used to create space between the sectors
+             showlegend = FALSE) %>%
+    layout(title = 'Early Voting by Age',
+           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+p;w;g;a
+```
+<hr>
+###Who will win?
+
+<hr>
+
+##The Method
+
+<hr>
+
+I used data from the <a href=http://dl.ncsbe.gov/index.html?prefix=data/> NCBOE </a> and the following R packages:
+
+```{r setup2, message=FALSE}
+load("models.RData")
+load("modelset.RData")
+load("TOTAL.RData")
+library(ggplot2)
+library(dplyr)
+library(caret)
+library(data.table)
+library(randomForest)
+```
+<hr>
+
+###Random Forests
+
+To model turnout I used Random Forests for each party. See <a href=""> my rpubs page.</a> for model testing of glm, lm and regressor/year selection. Modelset is the set of aggregated data which I used for training the model. On my final model I chose to use only on-election years (2006,2008,2010,2012,2014) in order to minimize the variance. 
+
+```{r models, eval=FALSE}
+set.seed(22)
+
+model_all_demF <- train(TOE_DEM~
+                               DOS_DEM+
+                               ROS_REP+
+                               UOS_UNA+
+                               LOS_LIB+
+                               DBM_DEM+
+                               RBM_REP+
+                               UBM_UNA+
+                               LBM_LIB+
+                               factor(county_desc)+
+                               factor(type), method = "rf", data = modelset)
+
+model_all_repF <- train(TOE_REP~
+                               DOS_DEM+
+                               ROS_REP+
+                               UOS_UNA+
+                               LOS_LIB+
+                               DBM_DEM+
+                               RBM_REP+
+                               UBM_UNA+
+                               LBM_LIB+
+                               Democrats+
+                               Republicans+
+                               Unaffiliated+
+                               Libertarians+
+                               Male+
+                               Female+
+                               American.Indian+
+                               Black+
+                               White+
+                               Hispanic+
+                               Other+
+                               factor(county_desc)+
+                               factor(type), method = "rf", data = modelset)
+
+model_all_unaF <- train(TOE_UNA~
+                               DOS_DEM+
+                               ROS_REP+
+                               UOS_UNA+
+                               LOS_LIB+
+                               DBM_DEM+
+                               RBM_REP+
+                               UBM_UNA+
+                               LBM_LIB+
+                               Democrats+
+                               Republicans+
+                               Unaffiliated+
+                               Libertarians+
+                               Male+
+                               Female+
+                               American.Indian+
+                               Black+
+                               White+
+                               Hispanic+
+                               Other+
+                               factor(county_desc)+
+                               factor(type), method = "rf", data = modelset)
+
+
+model_all_libF <- train(TOE_LIB~
+                               DOS_DEM+
+                               ROS_REP+
+                               UOS_UNA+
+                               LOS_LIB+
+                               DBM_DEM+
+                               RBM_REP+
+                               UBM_UNA+
+                               LBM_LIB+
+                               factor(county_desc)+
+                               factor(type), method = "rf", data = modelset, intercept = 0)
+```
+
+<hr>
+
+###Diagnosing Residuals and Checking the Fit
+
+I understand it is a cardinal sin of machine learning not to use a test set. In choosing the models and regressors I went through many tests and tested different models,  for all of it. However, I wanted the final model to use as much data as possible. The fit is based largely on predicting outcome at a county level and considering there are only 5 results per county so every one counts.
+
+The question now is if the models are overfit. We will find out tomorrow....
+
+Some interesting outliers in the data include high election day turnout based on low early voting numbers in Currituck county in 2006 and 2014 which might suggest limited access to early voting sites. Another is Robeson County in 2012 which has a very high early voter turnout for democrats but the election day turnout did not increase as(it was capped). This was a point of saturation where the early voting was so common that less people showed up for election day. If my model is overfit I would consider weighting this point more heavily. Other can be noted on the charts below.
+
+<hr>
+###Republican Turnout Model
+<hr>
+```{r fitR}
+model_all_repF
+#Residual standard error: 0.01176 on 498 degrees of freedom
+#Multiple R-squared:  0.9625,	Adjusted R-squared:  0.9624 
+#F-statistic: 1.277e+04 on 1 and 498 DF,  p-value: < 2.2e-16
+pred_modelsetFr <- predict(model_all_repF,modelset)
+qplot(modelset$TOE_REP,pred_modelsetFr)
+mFr <- lm(modelset$TOE_REP~pred_modelsetFr)
+summary(mFr)
+plot(mFr)
+```
+<hr>
+###Democrat Turnout Model
+<hr>
+```{r fitD}
+model_all_demF
+#Residual standard error: 0.01385 on 498 degrees of freedom
+#Multiple R-squared:  0.9504,	Adjusted R-squared:  0.9503 
+#F-statistic:  9545 on 1 and 498 DF,  p-value: < 2.2e-16
+pred_modelsetFd <- predict(model_all_demF,modelset)
+qplot(modelset$TOE_DEM,pred_modelsetFd)
+mFd <- lm(modelset$TOE_DEM~pred_modelsetFd)
+summary(mFd)
+plot(mFd)
+```
+<hr>
+###Unaffiliated Turnout Model
+<hr>
+```{r fitU}
+model_all_unaF
+#Residual standard error: 0.01222 on 498 degrees of freedom
+#Multiple R-squared:  0.9534,	Adjusted R-squared:  0.9533 
+#F-statistic: 1.018e+04 on 1 and 498 DF,  p-value: < 2.2e-16
+pred_modelsetFu <- predict(model_all_unaF,modelset)
+qplot(modelset$TOE_UNA,pred_modelsetFu)
+mFu <- lm(modelset$TOE_UNA~pred_modelsetFu)
+summary(mFu) 
+plot(mFu)
+```
+<hr>
+###Libertarian Turnout Model
+<hr>
+I chose to force the model for libertarian turnout through the origin as a way of mitigating standard error for the model. There are a lot of occasions when no early voters 
+```{r fitL}
+model_all_libF
+#Residual standard error: 0.06656 on 498 degrees of freedom
+#Multiple R-squared:  0.8955,	Adjusted R-squared:  0.8953 
+#F-statistic:  4267 on 1 and 498 DF,  p-value: < 2.2e-16
+pred_modelsetFl <- predict(model_all_libF,modelset)
+qplot(modelset$TOE_LIB,pred_modelsetFl)
+mFl <- lm(modelset$TOE_LIB~pred_modelsetFl)
+summary(mFl) 
+plot(mFl)
+```
+<hr>
+###Predictions
+<hr>
+```{r predicting}
+#0.702965
+#1915618
+predict_2016dF <- predict(model_all_demF, TOTAL)
+
+PDEM_16 <- sum(predict_2016dF*TOTAL$Democrats+
+           +         TOTAL$DOS_DEM*TOTAL$Democrats+
+           +         TOTAL$DBM_DEM*TOTAL$Democrats)/(sum(TOTAL$Democrats))
+DEM_16 <- sum(predict_2016dF*TOTAL$Democrats+
+           +         TOTAL$DOS_DEM*TOTAL$Democrats+
+           +         TOTAL$DBM_DEM*TOTAL$Democrats)
+
+
+#0.7469204
+#1553310
+predict_2016rF <- predict(model_all_repF, TOTAL)
+
+PREP_16 <- sum(predict_2016rF*TOTAL$Republicans+
+           TOTAL$ROS_REP*TOTAL$Republicans+
+           TOTAL$RBM_REP*TOTAL$Republicans)/(sum(TOTAL$Republicans))
+
+REP_16 <- sum(predict_2016rF*TOTAL$Republicans+
+           TOTAL$ROS_REP*TOTAL$Republicans+
+           TOTAL$RBM_REP*TOTAL$Republicans)
+
+#0.6289593
+#1295391
+predict_2016uF <- predict(model_all_unaF, TOTAL)
+
+PUNA_16 <- sum(predict_2016uF*TOTAL$Unaffiliated+
+           TOTAL$UOS_UNA*TOTAL$Unaffiliated+
+           TOTAL$UBM_UNA*TOTAL$Unaffiliated)/(sum(TOTAL$Unaffiliated))
+
+UNA_16 <- sum(predict_2016uF*TOTAL$Unaffiliated+
+           TOTAL$UOS_UNA*TOTAL$Unaffiliated+
+           TOTAL$UBM_UNA*TOTAL$Unaffiliated)
+
+#0.5983549
+#19205.4
+predict_2016lF <- predict(model_all_libF, TOTAL)
+PLIB_16 <- sum(predict_2016lF*TOTAL$Libertarians+
+           TOTAL$LOS_LIB*TOTAL$Libertarians+
+           TOTAL$LBM_LIB*TOTAL$Libertarians)/(sum(TOTAL$Libertarians))
+LIB_16 <- sum(predict_2016lF*TOTAL$Libertarians+
+           
+           TOTAL$LOS_LIB*TOTAL$Libertarians+
+           TOTAL$LBM_LIB*TOTAL$Libertarians)
+
+#2947459
+EV_16 <- sum(TOTAL$LOS_LIB*TOTAL$Libertarians+TOTAL$UOS_UNA*TOTAL$Unaffiliated+TOTAL$ROS_REP*TOTAL$Republicans+TOTAL$DOS_DEM*TOTAL$Democrats)
+#Total by mail 155265
+BM_16 <- sum(TOTAL$LBM_LIB*TOTAL$Libertarians+TOTAL$UBM_UNA*TOTAL$Unaffiliated+TOTAL$RBM_REP*TOTAL$Republicans+TOTAL$DBM_DEM*TOTAL$Democrats)
+#total election day 1680800
+ED_16 <- sum(predict_2016dF*TOTAL$Democrats+predict_2016rF*TOTAL$Republicans+predict_2016uF*TOTAL$Unaffiliated+predict_2016lF*TOTAL$Libertarians)
+
+#0.6936314
+#4783524
+PTOT_16 <- sum(predict_2016rF*TOTAL$Republicans+
+           TOTAL$ROS_REP*TOTAL$Republicans+
+           TOTAL$RBM_REP*TOTAL$Republicans+
+           predict_2016uF*TOTAL$Unaffiliated+
+           TOTAL$UOS_UNA*TOTAL$Unaffiliated+
+           TOTAL$UBM_UNA*TOTAL$Unaffiliated+
+           predict_2016lF*TOTAL$Libertarians+
+           TOTAL$LOS_LIB*TOTAL$Libertarians+
+           TOTAL$LBM_LIB*TOTAL$Libertarians+
+           predict_2016dF*TOTAL$Democrats+
+           TOTAL$DOS_DEM*TOTAL$Democrats+
+           TOTAL$DBM_DEM*TOTAL$Democrats)/(sum(TOTAL$Republicans+TOTAL$Unaffiliated+TOTAL$Libertarians+TOTAL$Democrats))
+
+TOT_16 <- sum(predict_2016rF*TOTAL$Republicans+
+           TOTAL$ROS_REP*TOTAL$Republicans+
+           TOTAL$RBM_REP*TOTAL$Republicans+
+           predict_2016uF*TOTAL$Unaffiliated+
+           TOTAL$UOS_UNA*TOTAL$Unaffiliated+
+           TOTAL$UBM_UNA*TOTAL$Unaffiliated+
+           predict_2016lF*TOTAL$Libertarians+
+           TOTAL$LOS_LIB*TOTAL$Libertarians+
+           TOTAL$LBM_LIB*TOTAL$Libertarians+
+           predict_2016dF*TOTAL$Democrats+
+           TOTAL$DOS_DEM*TOTAL$Democrats+
+           TOTAL$DBM_DEM*TOTAL$Democrats)
+
+PTOT_16w <- sum(predict_2016rF*TOTAL$Republicans+
+           TOTAL$ROS_REP*TOTAL$Republicans+
+           TOTAL$RBM_REP*TOTAL$Republicans+
+           predict_2016uF*TOTAL$Unaffiliated+
+           TOTAL$UOS_UNA*TOTAL$Unaffiliated+
+           TOTAL$UBM_UNA*TOTAL$Unaffiliated+
+           predict_2016dF*TOTAL$Democrats+
+           TOTAL$DOS_DEM*TOTAL$Democrats+
+           TOTAL$DBM_DEM*TOTAL$Democrats)/(sum(TOTAL$Republicans+TOTAL$Unaffiliated+TOTAL$Democrats))
+```
+<hr>
+###Calculations
+<hr>
+```{r calculations}
+modelset <- mutate(modelset, DCS_DEM = DCS/Democrats, RCS_REP = RCS/Republicans, UCS_UNA = UCS/Unaffiliated, LCS_LIB = LCS/Libertarians)
+
+DT <- as.data.table(modelset)
+invisible(lapply(names(DT),function(.name) set(DT, which(is.infinite(DT[[.name]])), j = .name,value =0)))
+
+modelset <- DT
+
+modelset[is.na(modelset)] <- 0
+
+
+#2008 0.7163673
+PDEM_08 <- sum(modelset[101:200,]$TOE_DEM*modelset[101:200,]$Democrats+
++         modelset[101:200,]$DOS_DEM*modelset[101:200,]$Democrats+
++         modelset[101:200,]$DBM_DEM*modelset[101:200,]$Democrats+modelset[101:200,]$DCS)/(sum(modelset[101:200,]$Democrats))
+DEM_08 <- sum(modelset[101:200,]$TOE_DEM*modelset[101:200,]$Democrats+
++         modelset[101:200,]$DOS_DEM*modelset[101:200,]$Democrats+
++         modelset[101:200,]$DBM_DEM*modelset[101:200,]$Democrats+modelset[101:200,]$DCS)
+
+#2012 0.6991179
+PDEM_12 <- sum(modelset[301:400,]$TOE_DEM*modelset[301:400,]$Democrats+
+        modelset[301:400,]$DOS_DEM*modelset[301:400,]$Democrats+
+        modelset[301:400,]$DBM_DEM*modelset[301:400,]$Democrats+modelset[301:400,]$DCS)/(sum(modelset[301:400,]$Democrats))
+DEM_12 <- sum(modelset[301:400,]$TOE_DEM*modelset[301:400,]$Democrats+
+        modelset[301:400,]$DOS_DEM*modelset[301:400,]$Democrats+
+        modelset[301:400,]$DBM_DEM*modelset[301:400,]$Democrats+modelset[301:400,]$DCS)
+
+#0.7130856 2008
+PREP_08 <- sum(modelset[101:200,]$TOE_REP*modelset[101:200,]$Republicans+
+        modelset[101:200,]$ROS_REP*modelset[101:200,]$Republicans+
+        modelset[101:200,]$RBM_REP*modelset[101:200,]$Republicans+modelset[101:200,]$RCS)/(sum(modelset[101:200,]$Republicans))
+REP_08 <- sum(modelset[101:200,]$TOE_REP*modelset[101:200,]$Republicans+
+        modelset[101:200,]$ROS_REP*modelset[101:200,]$Republicans+
+        modelset[101:200,]$RBM_REP*modelset[101:200,]$Republicans+modelset[101:200,]$RCS)
+
+# 0.7279284 2012
+PREP_12 <- sum(modelset[301:400,]$TOE_REP*modelset[301:400,]$Republicans+
+        modelset[301:400,]$ROS_REP*modelset[301:400,]$Republicans+
+        modelset[301:400,]$RBM_REP*modelset[301:400,]$Republicans+modelset[301:400,]$RCS)/(sum(modelset[301:400,]$Republicans))
+
+REP_12 <- sum(modelset[301:400,]$TOE_REP*modelset[301:400,]$Republicans+
+        modelset[301:400,]$ROS_REP*modelset[301:400,]$Republicans+
+        modelset[301:400,]$RBM_REP*modelset[301:400,]$Republicans+modelset[301:400,]$RCS)
+
+#0.6205267 2008
+PUNA_08 <- sum(modelset[101:200,]$TOE_UNA*modelset[101:200,]$Unaffiliated+
+        modelset[101:200,]$UOS_UNA*modelset[101:200,]$Unaffiliated+
+        modelset[101:200,]$UBM_UNA*modelset[101:200,]$Unaffiliated+modelset[101:200,]$RCS)/(sum(modelset[101:200,]$Unaffiliated))
+
+UNA_08 <- sum(modelset[101:200,]$TOE_UNA*modelset[101:200,]$Unaffiliated+
+        modelset[101:200,]$UOS_UNA*modelset[101:200,]$Unaffiliated+
+        modelset[101:200,]$UBM_UNA*modelset[101:200,]$Unaffiliated+modelset[101:200,]$RCS)
+#0.603038 2012
+PUNA_12 <- sum(modelset[301:400,]$TOE_UNA*modelset[301:400,]$Unaffiliated+
+        modelset[301:400,]$UOS_UNA*modelset[301:400,]$Unaffiliated+
+        modelset[301:400,]$UBM_UNA*modelset[301:400,]$Unaffiliated+modelset[301:400,]$RCS)/(sum(modelset[301:400,]$Unaffiliated))
+
+UNA_12 <- sum(modelset[301:400,]$TOE_UNA*modelset[301:400,]$Unaffiliated+
+        modelset[301:400,]$UOS_UNA*modelset[301:400,]$Unaffiliated+
+        modelset[301:400,]$UBM_UNA*modelset[301:400,]$Unaffiliated+modelset[301:400,]$RCS)
+
+TOT_08 <- sum(REP_08+UNA_08+DEM_08)
+TOT_12 <- sum(REP_12+UNA_12+DEM_12)
+
+PTOT_08 <- sum(REP_08+UNA_08+DEM_08)/sum(modelset[101:200,]$Unaffiliated+modelset[101:200,]$Republicans+modelset[101:200,]$Democrats)
+PTOT_12 <- sum(REP_12+UNA_12+DEM_12)/sum(modelset[301:400,]$Unaffiliated+modelset[301:400,]$Republicans+modelset[301:400,]$Democrats)
+```
+<hr>
+###Charts
+<hr>
+My prediction suggests that this year's turnout will exceed 2008 but fall short of 2012. See charts below.
+```{R chart1b, echo=FALSE}
+Year <- c(rep(2008,3),rep(2012,3),rep(2016,3))
+Percent <- c(71.6, 71.3, 62.05, 69.9, 72.8, 60.3, 70.3, 74.7, 62.9)
+Party <- c(rep(c("DEM", "REP", "UNA"),3))
+chart <- data.frame (cbind(Year, Party, Percent))
+
+gg <- ggplot(chart, aes(x=Year,y=Percent, fill=Party))+ geom_bar(position = "dodge", stat="identity") + scale_fill_manual(values=c("blue", "red", "grey")) + annotate("text", x = .72, y = 2.25, label = "62.05%")+ annotate("text", x = 1, y = 6.25, label = "71.3%")+ annotate("text", x = 1.32, y = 7.25, label = "71.6%")+ annotate("text", x = 1.72, y = 1.25, label = "60.3%")+ annotate("text", x = 2, y = 4.25, label = "69.9")+ annotate("text", x = 2.32, y = 8.25, label = "72.8%")+ annotate("text", x = 2.72, y = 3.25, label = "62.9%")+ annotate("text", x = 3, y = 5.25, label = "70.3%")+ annotate("text", x = 3.32, y = 9.25, label = "74.7%")+labs(title = "Turnout by Party")
+gg
+```
+##Total Turnout
+```{R chart2, echo=FALSE}
+Year_TOT <- c(2008,2012,2016)
+Percent_TOT <- c(69.6,68.3,69.36)
+Party_TOT <- c("Obama", "Romney", "?")
+chart2 <- data.frame (cbind(Year_TOT,Percent_TOT,Party_TOT))
+
+gg2 <- ggplot(chart2, aes(x=Year_TOT,Percent_TOT, fill=Party_TOT))+ geom_bar(position = "dodge", stat="identity")+ scale_fill_manual(values=c("grey", "blue", "red"))+ annotate("text", x = 1, y = 3.1, label = "69.6%")+ annotate("text", x = 2, y = 1.1, label = "68.3%")+ annotate("text", x = 3, y = 2.1, label = "69.36%")+labs(title = "Total Turnout")
+gg2
+```
